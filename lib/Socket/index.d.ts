@@ -33,16 +33,19 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
         atas?: string;
         bawah?: string;
         quoted?: any;
+        rich?: boolean;
     }) => Promise<any>;
     sendList: (jid: string, title: string, item: [string, string][], opsi?: {
         atas?: string;
         bawah?: string;
         quoted?: any;
+        rich?: boolean;
     }) => Promise<any>;
     sendCodeBlock: (jid: string, isi: string, opsi?: {
         atas?: string;
         bawah?: string;
         quoted?: any;
+        rich?: boolean;
     } & {
         language?: string;
     }) => Promise<any>;
