@@ -29,6 +29,23 @@ type OpsiInteraktif = {
     buttons: TombolInteraktif[];
 };
 declare const makeWASocket: (config: UserFacingSocketConfig) => {
+    sendTable: (jid: string, title: string, header: string[], baris: string[][], opsi?: {
+        atas?: string;
+        bawah?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    sendList: (jid: string, title: string, item: [string, string][], opsi?: {
+        atas?: string;
+        bawah?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    sendCodeBlock: (jid: string, isi: string, opsi?: {
+        atas?: string;
+        bawah?: string;
+        quoted?: any;
+    } & {
+        language?: string;
+    }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;
