@@ -7,16 +7,18 @@
     "whatsapp",
     "automation"
   ],
-  "homepage": "https://github.com/gxinztech/GxinzBail/",
+  "homepage": "https://github.com/gxinztech/GxinzBail",
   "repository": {
-    "url": "git@github.com:gxinztech/GxinzBail.git"
+    "type": "git",
+    "url": "git+https://github.com/gxinztech/GxinzBail.git"
   },
   "license": "MIT",
   "author": "gxinz tech",
-  "main": "lib/index.js",
+  "main": "cjs/lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
     "lib/**/*",
+    "cjs/**/*",
     "WAProto/**/*",
     "engine-requirements.js"
   ],
@@ -85,5 +87,18 @@
   "packageManager": "yarn@4.9.2",
   "engines": {
     "node": ">=20.0.0"
+  },
+  "module": "lib/index.js",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "import": "./lib/index.js",
+      "require": "./cjs/lib/index.js",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "bugs": {
+    "url": "https://github.com/gxinztech/GxinzBail/issues"
   }
 }
