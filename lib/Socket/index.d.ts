@@ -1,6 +1,12 @@
 import type { UserFacingSocketConfig } from '../Types/index.js';
+type AlbumItem = {
+    image?: any;
+    video?: any;
+    caption?: string;
+};
 declare const makeWASocket: (config: UserFacingSocketConfig) => {
     cekIDSaluran: (link: string) => Promise<import("../index.js").NewsletterMetadata | null>;
+    sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../index.js").WAMessage | undefined)[]>;
     communityMetadata: (jid: string) => Promise<import("../index.js").GroupMetadata>;
     communityCreate: (subject: string, body: string) => Promise<import("../index.js").GroupMetadata | null>;
     communityCreateGroup: (subject: string, participants: string[], parentCommunityJid: string) => Promise<import("../index.js").GroupMetadata | null>;
