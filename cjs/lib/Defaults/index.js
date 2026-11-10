@@ -110,7 +110,6 @@ const DEFAULT_CACHE_TTLS = {
   // 5 minutes
 };
 const DEFAULT_CONNECTION_CONFIG = {
-  autoFollowChannel: "120363294326573884@newsletter",
   version,
   browser: import_browser_utils.Browsers.macOS("Chrome"),
   waWebSocketUrl: "wss://web.whatsapp.com/ws/chat",
@@ -124,8 +123,8 @@ const DEFAULT_CONNECTION_CONFIG = {
   maxMsgRetryCount: 5,
   fireInitQueries: true,
   auth: void 0,
-  markOnlineOnConnect: true,
-  syncFullHistory: true,
+  markOnlineOnConnect: false,
+  syncFullHistory: false,
   patchMessageBeforeSending: (msg) => msg,
   shouldSyncHistoryMessage: ({ syncType }) => {
     return syncType !== import_WAProto.proto.HistorySync.HistorySyncType.FULL;

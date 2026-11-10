@@ -555,7 +555,7 @@ const makeSocket = (config) => {
     void end(new import_boom.Boom(msg || "Intentional Logout", { statusCode: import_Types2.DisconnectReason.loggedOut }));
   };
   const requestPairingCode = async (phoneNumber, customPairingCode) => {
-    const pairingCode = customPairingCode ?? "GXINTECH";
+    const pairingCode = customPairingCode ?? (0, import_Utils.bytesToCrockford)((0, import_crypto.randomBytes)(5));
     if (customPairingCode && customPairingCode?.length !== 8) {
       throw new Error("Custom pairing code must be exactly 8 chars");
     }

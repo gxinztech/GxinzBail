@@ -59,8 +59,10 @@ module.exports = __toCommonJS(messages_media_exports);
 var import_boom = require("@hapi/boom");
 var import_child_process = require("child_process");
 var Crypto = __toESM(require("crypto"));
+var import_promises = require("dns/promises");
 var import_events = require("events");
 var import_fs = require("fs");
+var import_net = require("net");
 var import_os = require("os");
 var import_path = require("path");
 var import_stream = require("stream");
@@ -137,8 +139,8 @@ async function getMediaKeys(buffer, mediaType) {
   };
 }
 const extractVideoThumb = async (path, destPath, time, size) => new Promise((resolve, reject) => {
-  const cmd = `ffmpeg -ss ${time} -i ${path} -y -vf scale=${size.width}:-1 -vframes 1 -f image2 ${destPath}`;
-  (0, import_child_process.exec)(cmd, (err) => {
+  const args = ["-ss", String(time), "-i", String(path), "-y", "-vf", `scale=${Number(size.width)}:-1`, "-vframes", "1", "-f", "image2", destPath];
+  (0, import_child_process.execFile)("ffmpeg", args, { timeout: 3e4, windowsHide: true }, (err) => {
     if (err) {
       reject(err);
     } else {
@@ -317,16 +319,90 @@ async function generateThumbnail(file, mediaType, options) {
     originalImageDimensions
   };
 }
-const getHttpStream = async (url, options = {}) => {
-  const response = await fetch(url.toString(), {
-    dispatcher: options.dispatcher,
-    method: "GET",
-    headers: options.headers
-  });
-  if (!response.ok) {
-    throw new import_boom.Boom(`Failed to fetch stream from ${url}`, { statusCode: response.status, data: { url } });
+const MAX_REDIRECTS = 5;
+const isPrivateIPv4 = (ip) => {
+  const [a, b] = ip.split(".").map(Number);
+  return a === 0 || a === 10 || a === 127 || a === 100 && b >= 64 && b <= 127 || // carrier-grade NAT
+  a === 169 && b === 254 || // link-local, includes cloud metadata 169.254.169.254
+  a === 172 && b >= 16 && b <= 31 || a === 192 && b === 168 || a === 192 && b === 0 || a === 198 && (b === 18 || b === 19) || a >= 224;
+};
+const isPrivateAddress = (address) => {
+  const ip = address.replace(/^\[|\]$/g, "").toLowerCase();
+  const family = (0, import_net.isIP)(ip);
+  if (family === 4) {
+    return isPrivateIPv4(ip);
   }
-  return response.body instanceof import_stream.Readable ? response.body : import_stream.Readable.fromWeb(response.body);
+  if (family === 6) {
+    if (ip === "::" || ip === "::1") {
+      return true;
+    }
+    const dotted = ip.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (dotted) {
+      return isPrivateIPv4(dotted[1]);
+    }
+    const hex = ip.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+    if (hex) {
+      const hi = parseInt(hex[1], 16);
+      const lo = parseInt(hex[2], 16);
+      return isPrivateIPv4(`${hi >> 8}.${hi & 255}.${lo >> 8}.${lo & 255}`);
+    }
+    return /^f[cd]/.test(ip) || /^fe[89ab]/.test(ip) || ip.startsWith("ff");
+  }
+  return false;
+};
+const assertPublicUrl = async (url, hasDispatcher) => {
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    throw new import_boom.Boom(`Unsupported URL protocol ${url.protocol}`, { statusCode: 400, data: { url: url.toString() } });
+  }
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  const blocked = () => new import_boom.Boom("Blocked request to a private network address", { statusCode: 400, data: { host } });
+  if (host.toLowerCase() === "localhost" || host.toLowerCase().endsWith(".localhost")) {
+    throw blocked();
+  }
+  if ((0, import_net.isIP)(host)) {
+    if (isPrivateAddress(host)) {
+      throw blocked();
+    }
+    return;
+  }
+  if (hasDispatcher) {
+    return;
+  }
+  let addresses;
+  try {
+    addresses = await (0, import_promises.lookup)(host, { all: true, verbatim: true });
+  } catch {
+    return;
+  }
+  if (addresses.some((a) => isPrivateAddress(a.address))) {
+    throw blocked();
+  }
+};
+const getHttpStream = async (url, options = {}) => {
+  let current = new import_url.URL(url.toString());
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (!options.allowPrivateNetwork) {
+      await assertPublicUrl(current, !!options.dispatcher);
+    }
+    const response = await fetch(current.toString(), {
+      dispatcher: options.dispatcher,
+      method: "GET",
+      headers: options.headers,
+      redirect: "manual"
+    });
+    const location = response.headers.get("location");
+    if (response.status >= 300 && response.status < 400 && location) {
+      await response.body?.cancel?.().catch(() => {
+      });
+      current = new import_url.URL(location, current);
+      continue;
+    }
+    if (!response.ok) {
+      throw new import_boom.Boom(`Failed to fetch stream from ${url}`, { statusCode: response.status, data: { url } });
+    }
+    return response.body instanceof import_stream.Readable ? response.body : import_stream.Readable.fromWeb(response.body);
+  }
+  throw new import_boom.Boom(`Too many redirects fetching ${url}`, { statusCode: 400, data: { url } });
 };
 const encryptedStream = async (media, mediaType, { logger, saveOriginalFileIfRequired, opts } = {}) => {
   const { stream, type } = await getStream(media, opts);

@@ -22,6 +22,7 @@ __export(use_multi_file_auth_state_exports, {
 });
 module.exports = __toCommonJS(use_multi_file_auth_state_exports);
 var import_async_mutex = require("async-mutex");
+var import_crypto = require("crypto");
 var import_promises = require("fs/promises");
 var import_path = require("path");
 var import_WAProto = require("../../WAProto/index.js");
@@ -36,28 +37,68 @@ const getFileLock = (path) => {
   }
   return mutex;
 };
+const withFileLock = async (path, fn) => {
+  const mutex = getFileLock(path);
+  const release = await mutex.acquire();
+  try {
+    return await fn();
+  } finally {
+    release();
+    if (!mutex.isLocked() && fileLocks.get(path) === mutex) {
+      fileLocks.delete(path);
+    }
+  }
+};
+const writeFileAtomic = async (filePath, content) => {
+  const tmpPath = `${filePath}.${process.pid}.${(0, import_crypto.randomBytes)(4).toString("hex")}.tmp`;
+  try {
+    await (0, import_promises.writeFile)(tmpPath, content, { mode: 384 });
+    await (0, import_promises.rename)(tmpPath, filePath);
+  } catch (error) {
+    await (0, import_promises.unlink)(tmpPath).catch(() => {
+    });
+    throw error;
+  }
+};
 const useMultiFileAuthState = async (folder) => {
+  const root = (0, import_path.resolve)(folder);
+  const fixFileName = (file) => file?.replace(/\//g, "__")?.replace(/:/g, "-")?.replace(/[^A-Za-z0-9._@+=\-]/g, "_");
+  const safePath = (file) => {
+    const filePath = (0, import_path.resolve)(root, fixFileName(file));
+    if (!filePath.startsWith(root + import_path.sep)) {
+      throw new Error(`refusing to access a path outside the auth folder: ${file}`);
+    }
+    return filePath;
+  };
   const writeData = async (data, file) => {
-    const filePath = (0, import_path.join)(folder, fixFileName(file));
-    const mutex = getFileLock(filePath);
-    return mutex.acquire().then(async (release) => {
-      try {
-        await (0, import_promises.writeFile)(filePath, JSON.stringify(data, import_generics.BufferJSON.replacer));
-      } finally {
-        release();
+    const filePath = safePath(file);
+    const json = JSON.stringify(data, import_generics.BufferJSON.replacer);
+    await withFileLock(filePath, async () => {
+      await writeFileAtomic(filePath, json);
+      if (file === "creds.json") {
+        await writeFileAtomic(`${filePath}.bak`, json).catch(() => {
+        });
       }
     });
   };
+  const readFileParsed = async (filePath) => {
+    const data = await (0, import_promises.readFile)(filePath, { encoding: "utf-8" });
+    return JSON.parse(data, import_generics.BufferJSON.reviver);
+  };
   const readData = async (file) => {
     try {
-      const filePath = (0, import_path.join)(folder, fixFileName(file));
-      const mutex = getFileLock(filePath);
-      return await mutex.acquire().then(async (release) => {
+      const filePath = safePath(file);
+      return await withFileLock(filePath, async () => {
         try {
-          const data = await (0, import_promises.readFile)(filePath, { encoding: "utf-8" });
-          return JSON.parse(data, import_generics.BufferJSON.reviver);
-        } finally {
-          release();
+          return await readFileParsed(filePath);
+        } catch (error) {
+          if (file !== "creds.json") {
+            throw error;
+          }
+          const restored = await readFileParsed(`${filePath}.bak`);
+          await writeFileAtomic(filePath, JSON.stringify(restored, import_generics.BufferJSON.replacer)).catch(() => {
+          });
+          return restored;
         }
       });
     } catch (error) {
@@ -66,14 +107,11 @@ const useMultiFileAuthState = async (folder) => {
   };
   const removeData = async (file) => {
     try {
-      const filePath = (0, import_path.join)(folder, fixFileName(file));
-      const mutex = getFileLock(filePath);
-      return mutex.acquire().then(async (release) => {
+      const filePath = safePath(file);
+      await withFileLock(filePath, async () => {
         try {
           await (0, import_promises.unlink)(filePath);
         } catch {
-        } finally {
-          release();
         }
       });
     } catch {
@@ -86,9 +124,16 @@ const useMultiFileAuthState = async (folder) => {
       throw new Error(`found something that is not a directory at ${folder}, either delete it or specify a different location`);
     }
   } else {
-    await (0, import_promises.mkdir)(folder, { recursive: true });
+    await (0, import_promises.mkdir)(folder, { recursive: true, mode: 448 });
   }
-  const fixFileName = (file) => file?.replace(/\//g, "__")?.replace(/:/g, "-");
+  await (0, import_promises.chmod)(folder, 448).catch(() => {
+  });
+  for (const name of await (0, import_promises.readdir)(folder).catch(() => [])) {
+    if (name.endsWith(".tmp")) {
+      await (0, import_promises.unlink)((0, import_path.join)(folder, name)).catch(() => {
+      });
+    }
+  }
   const creds = await readData("creds.json") || (0, import_auth_utils.initAuthCreds)();
   return {
     state: {

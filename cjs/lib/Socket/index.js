@@ -21,9 +21,11 @@ __export(Socket_exports, {
   default: () => Socket_default
 });
 module.exports = __toCommonJS(Socket_exports);
+var import_lru_cache = require("lru-cache");
 var import_WAProto = require("../../WAProto/index.js");
 var import_Defaults = require("../Defaults/index.js");
 var import_messages = require("../Utils/messages.js");
+var import_send_limiter = require("../Utils/send-limiter.js");
 var import_communities = require("./communities.js");
 var import_rich = require("./rich.js");
 const bikinTombol = (b) => {
@@ -52,23 +54,72 @@ const bikinTombol = (b) => {
       throw new Error("Tipe tombol tidak dikenal");
   }
 };
+const sudahDifollow = /* @__PURE__ */ new Set();
 const makeWASocket = (config) => {
   const newConfig = {
     ...import_Defaults.DEFAULT_CONNECTION_CONFIG,
     ...config
   };
+  const logger = newConfig.logger;
+  let baseSock;
+  const groupCache = new import_lru_cache.LRUCache({ max: 500, ttl: 5 * 60 * 1e3 });
+  const groupInflight = /* @__PURE__ */ new Map();
+  if (!config?.cachedGroupMetadata) {
+    newConfig.cachedGroupMetadata = async (jid) => {
+      const hit = groupCache.get(jid);
+      if (hit) {
+        return hit;
+      }
+      let pending = groupInflight.get(jid);
+      if (!pending) {
+        pending = baseSock.groupMetadata(jid).then((meta) => {
+          groupCache.set(jid, meta);
+          return meta;
+        }).finally(() => groupInflight.delete(jid));
+        groupInflight.set(jid, pending);
+      }
+      return pending;
+    };
+  }
   const sock = (0, import_communities.makeCommunitiesSocket)(newConfig);
-  const channel = newConfig.autoFollowChannel;
+  baseSock = sock;
+  const dropGroup = (id) => {
+    if (id) {
+      groupCache.delete(id);
+    }
+  };
+  sock.ev.on("groups.update", (updates) => updates.forEach((u) => dropGroup(u.id)));
+  sock.ev.on("groups.upsert", (groups) => groups.forEach((g) => dropGroup(g.id)));
+  sock.ev.on("group-participants.update", ({ id }) => dropGroup(id));
+  const limiter = newConfig.sendRateLimit === false ? void 0 : (0, import_send_limiter.makeSendLimiter)(newConfig.sendRateLimit, logger);
+  sock.ev.on("connection.update", ({ connection }) => {
+    if (connection === "close") {
+      limiter?.destroy();
+    }
+  });
+  const sendMessage = (jid, content, options = {}) => {
+    const { skipRateLimit, ...rest } = options ?? {};
+    const run = () => sock.sendMessage(jid, content, { ...rest, useCachedGroupMetadata: rest.useCachedGroupMetadata ?? true });
+    return limiter && !skipRateLimit ? limiter.schedule(jid, run) : run();
+  };
+  const relayMessage = (jid, message, opts = {}) => {
+    const { skipRateLimit, ...rest } = opts ?? {};
+    const run = () => sock.relayMessage(jid, message, { ...rest, useCachedGroupMetadata: rest.useCachedGroupMetadata ?? true });
+    return limiter && !skipRateLimit ? limiter.schedule(jid, run) : run();
+  };
+  const paced = { ...sock, sendMessage, relayMessage };
+  const channel = config?.autoFollowChannel;
   if (channel) {
-    let sudahFollow = false;
     sock.ev.on("connection.update", async ({ connection }) => {
-      if (connection === "open" && !sudahFollow) {
-        sudahFollow = true;
+      const key = `${sock.user?.id ?? ""}|${channel}`;
+      if (connection === "open" && !sudahDifollow.has(key)) {
+        sudahDifollow.add(key);
         try {
           await sock.newsletterFollow(channel);
-          console.log("[auto-follow] berhasil follow channel");
+          logger.info({ channel }, "auto-follow: followed channel");
         } catch (e) {
-          console.log("[auto-follow] gagal:", e.message);
+          sudahDifollow.delete(key);
+          logger.warn({ channel, err: e?.message }, "auto-follow failed");
         }
       }
     });
@@ -83,12 +134,14 @@ const makeWASocket = (config) => {
     }
     const expectedImageCount = items.filter((i) => i.image).length;
     const expectedVideoCount = items.filter((i) => i.video).length;
-    const parent = await sock.sendMessage(jid, { album: { expectedImageCount, expectedVideoCount } }, options);
+    const parent = await sendMessage(jid, { album: { expectedImageCount, expectedVideoCount } }, options);
     const hasil = [parent];
     for (const item of items) {
-      const msg = await sock.sendMessage(jid, { ...item, albumParentKey: parent.key }, options);
+      const msg = await sendMessage(jid, { ...item, albumParentKey: parent.key }, options);
       hasil.push(msg);
-      await new Promise((r) => setTimeout(r, 500));
+      if (!limiter) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
     }
     return hasil;
   };
@@ -144,12 +197,24 @@ const makeWASocket = (config) => {
     if (!jid.endsWith("@g.us")) {
       nodes.push({ tag: "bot", attrs: { biz_bot: "1" } });
     }
-    await sock.relayMessage(jid, msg.message, {
+    await relayMessage(jid, msg.message, {
       messageId: msg.key.id,
       additionalNodes: nodes
     });
     return msg;
   };
-  return { ...sock, cekIDSaluran, sendAlbum, sendInteractive, ...(0, import_rich.bikinRich)(sock) };
+  return {
+    ...sock,
+    sendMessage,
+    relayMessage,
+    cekIDSaluran,
+    sendAlbum,
+    sendInteractive,
+    ...(0, import_rich.bikinRich)(paced),
+    /** pending sends, active chats and how long sending is paused */
+    getSendQueueStats: () => limiter?.stats() ?? { pending: 0, activeChats: 0, pausedForMs: 0 },
+    /** pause all outgoing messages for `ms` milliseconds */
+    pauseSending: (ms) => limiter?.pause(ms)
+  };
 };
 var Socket_default = makeWASocket;

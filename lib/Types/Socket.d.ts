@@ -6,6 +6,7 @@ import type { AuthenticationState, LIDMapping, SignalAuthState, TransactionCapab
 import type { GroupMetadata } from './GroupMetadata.js';
 import { type MediaConnInfo, type WAMessageKey } from './Message.js';
 import type { SignalRepositoryWithLIDStore } from './Signal.js';
+import type { SendRateLimitOptions } from '../Utils/send-limiter.js';
 export type WAVersion = [number, number, number];
 export type WABrowserDescription = [string, string, string];
 export type CacheStore = {
@@ -31,7 +32,10 @@ export type PatchedMessageWithRecipientJID = proto.IMessage & {
     recipientJid?: string;
 };
 export type SocketConfig = {
+    /** follow this channel (newsletter JID) once connected. Off unless you set it */
     autoFollowChannel?: string | false;
+    /** outgoing message pacing. Enabled by default; `false` turns it off, an object overrides the defaults */
+    sendRateLimit?: false | Partial<SendRateLimitOptions>;
     /** the WS url to connect to WA */
     waWebSocketUrl: string | URL;
     /** Fails the connection if the socket times out in this interval */

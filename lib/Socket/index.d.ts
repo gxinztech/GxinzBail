@@ -49,6 +49,14 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     } & {
         language?: string;
     }) => Promise<any>;
+    /** pending sends, active chats and how long sending is paused */
+    getSendQueueStats: () => {
+        pending: number;
+        activeChats: number;
+        pausedForMs: number;
+    };
+    /** pause all outgoing messages for `ms` milliseconds */
+    pauseSending: (ms: number) => void | undefined;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;

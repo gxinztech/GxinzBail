@@ -222,6 +222,8 @@ type MinimalRelayOptions = {
     messageId?: string;
     /** should we use group metadata cache, or fetch afresh from the server; default assumed to be "true" */
     useCachedGroupMetadata?: boolean;
+    /** send immediately, ignoring the outgoing rate limiter (see `sendRateLimit` in the socket config) */
+    skipRateLimit?: boolean;
 };
 export type MessageRelayOptions = MinimalRelayOptions & {
     /** only send to a specific participant; used when a message decryption fails for a single user */

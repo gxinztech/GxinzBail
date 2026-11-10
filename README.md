@@ -15,8 +15,11 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| Default pairing code | `requestPairingCode(number)` returns `GXINTECH` unless you pass your own | ✅ |
-| Auto-follow channel | Follows a channel on connect, can be disabled | ✅ |
+| Pairing code | `requestPairingCode(number)` returns a random 8-character code, or the one you pass | ✅ |
+| Auto-follow channel | Opt-in: follows a channel of your choice on connect | ✅ |
+| Send rate limiter | Paces outgoing messages, retries on `rate-overlimit` | ✅ |
+| Auto-reconnect | `makeAutoReconnect` with backoff, stops on logout/ban | ✅ |
+| Hardened auth state | Atomic writes, `creds.json` backup, safe file names | ✅ |
 | Interactive buttons | `sendInteractive` with reply, url, copy and call buttons | ✅ |
 | Formatted replies | `sendTable`, `sendList`, `sendCodeBlock` as formatted text | ✅ |
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
@@ -80,13 +83,13 @@ sock.ev.on('connection.update', async ({ qr, connection }) => {
   if (qr && !asked && !sock.authState.creds.registered) {
     asked = true
     const code = await sock.requestPairingCode('628xxxxxxxxxx')
-    console.log('Pairing code:', code) // GXINTECH
+    console.log('Pairing code:', code) // random, e.g. 7K2M9QXD
   }
   if (connection === 'open') console.log('connected')
 })
 ```
 
-To use your own code, pass 8 characters as the second argument:
+A random code is generated for every request. To use your own, pass 8 characters as the second argument (for example `'GXINTECH'`):
 
 ```js
 await sock.requestPairingCode('628xxxxxxxxxx', 'ABCD1234')
@@ -179,13 +182,7 @@ await sock.newsletterFollow('120363xxxxxxxxxx@newsletter')
 
 ### Auto-follow
 
-On connect, the socket follows the gxinztech channel. That is the default, and you should know about it before you ship this to other people. Turn it off with:
-
-```js
-const sock = makeWASocket({ auth: state, autoFollowChannel: false })
-```
-
-Or point it at a channel of your own:
+Off by default. Following a channel changes the user's account, so it only happens when you ask for it:
 
 ```js
 const sock = makeWASocket({
@@ -193,6 +190,79 @@ const sock = makeWASocket({
   autoFollowChannel: '120363xxxxxxxxxx@newsletter'
 })
 ```
+
+Each channel is followed once per process, not on every reconnect.
+
+---
+
+## Stability and safety
+
+### Rate limiting
+
+Outgoing `sendMessage` / `relayMessage` calls (and the helpers built on them) go through a queue. One reply to an idle chat is sent immediately; bursts are spread out, order inside a chat is kept, and a WhatsApp `rate-overlimit` answer pauses sending for the whole account and retries with backoff.
+
+```js
+const sock = makeWASocket({
+  auth: state,
+  sendRateLimit: {            // every field is optional, these are the defaults
+    globalMinDelayMs: 300,    // gap between any two sends
+    perChatMinDelayMs: 1000,  // gap between two sends to the same chat
+    jitterMs: 250,            // random extra delay
+    maxPerWindow: 40,         // at most 40 sends ...
+    windowMs: 30000,          // ... per 30 seconds
+    maxQueueSize: 500,        // beyond this, sends are rejected instead of piling up
+    maxRetries: 3
+  }
+})
+
+await sock.sendMessage(jid, { text: 'urgent' }, { skipRateLimit: true }) // bypass once
+sock.getSendQueueStats()   // { pending, activeChats, pausedForMs }
+sock.pauseSending(60_000)  // stop all sending for a minute
+```
+
+Pass `sendRateLimit: false` to disable it. Group member lists are cached for 5 minutes (and dropped when the group changes), so sending to a group no longer asks the server for the member list every time. Pass your own `cachedGroupMetadata` to replace that cache.
+
+### Staying logged in
+
+`useMultiFileAuthState` writes through a temp file and renames it, keeps `creds.json.bak`, and restores from it if `creds.json` is ever missing or unreadable. Session files are `0600` and the folder `0700`.
+
+`makeAutoReconnect` rebuilds the socket when the connection drops, and knows when not to:
+
+```js
+import makeWASocket, { makeAutoReconnect, useMultiFileAuthState } from 'gxinztech-baileys'
+import { rm } from 'node:fs/promises'
+
+const bot = makeAutoReconnect(async () => {
+  const { state, saveCreds } = await useMultiFileAuthState('auth')
+  const sock = makeWASocket({ auth: state })
+  sock.ev.on('creds.update', saveCreds)
+  sock.ev.on('messages.upsert', handleMessages)
+  return sock                                   // attach all your listeners here
+}, {
+  onLoggedOut: async () => {                    // 401: session is gone
+    await rm('auth', { recursive: true, force: true })
+    return true                                 // true = start again and pair a new session
+  },
+  onGiveUp: ({ reason }) => console.log('stopped:', reason) // banned, replaced, or too many failures
+})
+```
+
+| Close reason | What happens |
+|--------------|--------------|
+| connection lost / timed out / 503 | reconnect with exponential backoff (1s up to 60s) |
+| restart required (515, after pairing) | reconnect immediately |
+| logged out (401) | no reconnect, `onLoggedOut` decides |
+| forbidden (403), replaced (440), multi-device mismatch | no reconnect, `onGiveUp` |
+| 10 failures in a row | `onGiveUp` |
+
+Run one process per session folder. Two processes on the same session replace each other (440) and that is a common cause of being logged out.
+
+### Other hardening
+
+- Video thumbnails call `ffmpeg` without a shell, so a file name can no longer inject commands.
+- Remote media and link-preview thumbnail images refuse localhost, private networks and cloud metadata addresses, also after redirects. (The link-preview page itself is fetched by `link-preview-js`, which this does not cover.) If you serve media from your own network, pass `options: { allowPrivateNetwork: true }` in the socket config.
+- `syncFullHistory` and `markOnlineOnConnect` now default to `false`.
+- If you pass user input as `{ image: { url } }`, validate it first: a path that is not `http(s)://` is read from the local disk.
 
 ---
 

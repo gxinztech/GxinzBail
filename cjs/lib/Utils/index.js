@@ -36,6 +36,8 @@ __reExport(Utils_exports, require("./browser-utils.js"), module.exports);
 __reExport(Utils_exports, require("./companion-reg-client-utils.js"), module.exports);
 __reExport(Utils_exports, require("./identity-change-handler.js"), module.exports);
 __reExport(Utils_exports, require("./stanza-ack.js"), module.exports);
+__reExport(Utils_exports, require("./send-limiter.js"), module.exports);
+__reExport(Utils_exports, require("./connection-manager.js"), module.exports);
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   ...require("./generics.js"),
@@ -58,5 +60,7 @@ __reExport(Utils_exports, require("./stanza-ack.js"), module.exports);
   ...require("./browser-utils.js"),
   ...require("./companion-reg-client-utils.js"),
   ...require("./identity-change-handler.js"),
-  ...require("./stanza-ack.js")
+  ...require("./stanza-ack.js"),
+  ...require("./send-limiter.js"),
+  ...require("./connection-manager.js")
 });
