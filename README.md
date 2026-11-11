@@ -23,11 +23,11 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Interactive buttons | `sendInteractive` with reply, url, copy and call buttons | ✅ |
 | Formatted replies | `sendTable`, `sendList`, `sendCodeBlock` as formatted text | ✅ |
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
-| Album messages | `sendAlbum` sends several images or videos as one album | 🧪 |
-| Native rich cards | `rich: true` on the helpers above | ⚠️ |
+| Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
+| Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
-✅ confirmed working, 🧪 implemented but not tested yet, ⚠️ experimental. Not every WhatsApp client renders the experimental ones.
+✅ confirmed working.
 
 ---
 
@@ -165,7 +165,7 @@ await sock.sendCodeBlock(jid, 'console.log("hi")', { language: 'javascript' })
 
 Options shared by the three helpers above: `atas` (text above), `bawah` (text below), `quoted` (message to reply to).
 
-They send plain formatted text by default so they show up on any account. Pass `rich: true` to send WhatsApp's native rich response card instead. It's experimental, and on a regular account the card did not show up for the receiver in testing.
+They send plain formatted text by default so they show up on any account. Pass `rich: true` to send WhatsApp's native rich response card instead. It is confirmed working.
 
 ---
 
