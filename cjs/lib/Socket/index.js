@@ -55,7 +55,20 @@ const bikinTombol = (b) => {
   }
 };
 const sudahDifollow = /* @__PURE__ */ new Set();
+// Pesan terima kasih, tampil sekali per proses. Matikan dengan makeWASocket({ banner: false }) atau env GXINZ_BANNER=off
+let bannerSudahTampil = false;
+const tampilBanner = (config) => {
+    if (bannerSudahTampil) {
+        return;
+    }
+    bannerSudahTampil = true;
+    if (config?.banner === false || /^(0|off|false|no)$/i.test(process.env.GXINZ_BANNER ?? '')) {
+        return;
+    }
+    console.log('\n✨ Thank you for choosing and using Baileys by GxinzTech!\n\nWe truly appreciate your support and trust. We hope you enjoy every feature and have a smooth experience with our service. 🚀\n');
+};
 const makeWASocket = (config) => {
+  tampilBanner(config);
   const newConfig = {
     ...import_Defaults.DEFAULT_CONNECTION_CONFIG,
     ...config

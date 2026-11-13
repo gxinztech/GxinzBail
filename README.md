@@ -271,6 +271,10 @@ await sock.sendRichMessage(jid, [
 
 `messageType` is 2 (text), 4 (table) or 5 (code), as a number or a name. `codeBlocks` can be a plain string: it is split into keyword, string, number, comment and method parts with a simple highlighter, or you can pass your own blocks. `header` and `footer` are added as text blocks at the start and the end. Other message types are passed through untouched.
 
+### Startup message
+
+On the first `makeWASocket` call of a process, a thank-you line is printed once to the console. Turn it off with `makeWASocket({ banner: false })` or by setting the environment variable `GXINZ_BANNER=off`.
+
 ### Auto-follow
 
 Off by default. Following a channel changes the user's account, so it only happens when you ask for it:
