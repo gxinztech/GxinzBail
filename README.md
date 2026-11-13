@@ -25,8 +25,8 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
 | Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
 | Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
-| Link messages | `sendLink` sends a link with preview, optional header and footer | 🧪 |
-| Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | 🧪 |
+| Link messages | `sendLink` sends a link with preview, optional header and footer | ✅ |
+| Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | ✅ |
 | Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
