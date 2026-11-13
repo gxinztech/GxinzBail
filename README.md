@@ -27,8 +27,8 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
 | Link messages | `sendLink` sends a link with preview, optional header and footer | ✅ |
 | Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | ✅ |
-| Product messages | `sendProduct` sends a catalog product card | 🧪 |
-| Order messages | `sendOrder` sends an order card (INQUIRY, ACCEPTED, DECLINED) | 🧪 |
+| Product messages | `sendProduct` sends a catalog product card | ✅ |
+| Order messages | `sendOrder` sends an order card (INQUIRY, ACCEPTED, DECLINED) | ✅ |
 | Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
