@@ -27,6 +27,8 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
 | Link messages | `sendLink` sends a link with preview, optional header and footer | ✅ |
 | Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | ✅ |
+| Product messages | `sendProduct` sends a catalog product card | 🧪 |
+| Order messages | `sendOrder` sends an order card (INQUIRY, ACCEPTED, DECLINED) | 🧪 |
 | Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
@@ -175,6 +177,41 @@ await sock.sendPaymentRequest(jid, {
 ```
 
 `amount` is in normal currency units. In groups, pass `from` with the JID of the person who should pay. WhatsApp shows the full payment card only in countries with WhatsApp Pay, elsewhere it may look like a plain message or not show at all.
+
+### Product
+
+```js
+await sock.sendProduct(jid, {
+  id: 'WH-001',
+  title: 'Wireless Headphones',
+  description: 'Headphone bluetooth kualitas tinggi',
+  price: 299000,
+  currency: 'IDR',
+  retailerId: 'khyz-shop',
+  url: 'https://example.com/product',
+  image: { url: 'https://example.com/product.jpg' },
+  body: 'Cek produk ini!',
+  footer: 'Khyz Shop'
+})
+```
+
+`price` is in normal currency units and `image` is required. The product message format has no buttons. How the card looks depends on the WhatsApp client and on whether the sender is a business account.
+
+### Order
+
+```js
+await sock.sendOrder(jid, {
+  orderId: 'ORDER123',
+  itemCount: 3,
+  status: 'ACCEPTED',
+  message: 'Pesanan kamu sudah diterima!',
+  orderTitle: 'Order #123',
+  total: 150000,
+  currency: 'IDR'
+})
+```
+
+`status` is INQUIRY, ACCEPTED or DECLINED. `total` is in normal currency units. `sellerJid` defaults to your own number.
 
 ### Table
 

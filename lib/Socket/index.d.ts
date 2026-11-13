@@ -78,6 +78,37 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     }, opsi?: {
         quoted?: any;
     }) => Promise<any>;
+    /** Kirim pesan produk katalog. price dalam satuan mata uang (bukan x1000) */
+    sendProduct: (jid: string, data: {
+        id: string;
+        title: string;
+        description?: string;
+        price: number;
+        salePrice?: number;
+        currency?: string;
+        retailerId?: string;
+        url?: string;
+        image: any;
+        businessOwnerJid?: string;
+        body?: string;
+        footer?: string;
+    }, opsi?: {
+        quoted?: any;
+    }) => Promise<any>;
+    /** Kirim pesan order. status: INQUIRY, ACCEPTED atau DECLINED. total dalam satuan mata uang */
+    sendOrder: (jid: string, data: {
+        orderId: string;
+        itemCount?: number;
+        status?: 'INQUIRY' | 'ACCEPTED' | 'DECLINED';
+        message?: string;
+        orderTitle?: string;
+        sellerJid?: string;
+        total: number;
+        currency?: string;
+        token?: string;
+    }, opsi?: {
+        quoted?: any;
+    }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;

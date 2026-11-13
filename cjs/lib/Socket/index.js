@@ -274,6 +274,79 @@ const makeWASocket = (config) => {
       await relayMessage(jid, msg.message, { messageId: msg.key.id });
       return msg;
   };
+  // Kirim pesan produk katalog. Gambar wajib (url atau Buffer). Tombol tidak ada di protokol ProductMessage.
+  const sendProduct = (jid, data = {}, opsi = {}) => {
+      const { id, title, description, price, salePrice, currency = 'IDR', retailerId, url, image, thumbnail, businessOwnerJid, body, footer } = data;
+      const gambar = image ?? thumbnail;
+      if (!id || !title) {
+          throw new Error('sendProduct butuh id dan title');
+      }
+      if (!Number.isFinite(price) || price < 0) {
+          throw new Error('price harus angka 0 atau lebih');
+      }
+      if (!gambar) {
+          throw new Error('sendProduct butuh image (contoh: { url: "https://..." } atau Buffer)');
+      }
+      const mata = String(currency).toUpperCase();
+      if (!/^[A-Z]{3}$/.test(mata)) {
+          throw new Error('currency harus kode 3 huruf, contoh IDR');
+      }
+      const pemilik = businessOwnerJid ?? (sock.user?.id ?? '').replace(/:\d+@/, '@');
+      const product = {
+          productId: String(id),
+          title,
+          description,
+          currencyCode: mata,
+          priceAmount1000: Math.round(price * 1000),
+          retailerId,
+          url,
+          productImage: gambar
+      };
+      if (Number.isFinite(salePrice)) {
+          product.salePriceAmount1000 = Math.round(salePrice * 1000);
+      }
+      const { quoted, ...lainnya } = opsi;
+      return sendMessage(jid, { product, businessOwnerJid: pemilik, body, footer }, { quoted, ...lainnya });
+  };
+  // Kirim pesan order. status: INQUIRY, ACCEPTED atau DECLINED.
+  const sendOrder = async (jid, data = {}, opsi = {}) => {
+      const { orderId, itemCount = 1, status = 'INQUIRY', message, orderTitle, sellerJid, total, currency = 'IDR', token } = data;
+      if (!orderId) {
+          throw new Error('sendOrder butuh orderId');
+      }
+      if (!Number.isInteger(itemCount) || itemCount < 1) {
+          throw new Error('itemCount harus bilangan bulat 1 atau lebih');
+      }
+      if (!Number.isFinite(total) || total < 0) {
+          throw new Error('total harus angka 0 atau lebih');
+      }
+      const kodeStatus = import_WAProto.proto.Message.OrderMessage.OrderStatus[String(status).toUpperCase()];
+      if (!kodeStatus) {
+          throw new Error('status harus INQUIRY, ACCEPTED atau DECLINED');
+      }
+      const mata = String(currency).toUpperCase();
+      if (!/^[A-Z]{3}$/.test(mata)) {
+          throw new Error('currency harus kode 3 huruf, contoh IDR');
+      }
+      const penjual = sellerJid ?? (sock.user?.id ?? '').replace(/:\d+@/, '@');
+      const orderMessage = {
+          orderId: String(orderId),
+          itemCount,
+          status: kodeStatus,
+          surface: import_WAProto.proto.Message.OrderMessage.OrderSurface.CATALOG,
+          message,
+          orderTitle,
+          sellerJid: penjual,
+          totalAmount1000: Math.round(total * 1000),
+          totalCurrencyCode: mata
+      };
+      if (token) {
+          orderMessage.token = String(token);
+      }
+      const msg = (0, import_messages.generateWAMessageFromContent)(jid, { orderMessage }, { userJid: sock.user?.id ?? '', quoted: opsi.quoted });
+      await relayMessage(jid, msg.message, { messageId: msg.key.id });
+      return msg;
+  };
   return {
     ...sock,
     sendMessage,
@@ -284,6 +357,8 @@ const makeWASocket = (config) => {
     sendPoll,
     sendLink,
     sendPaymentRequest,
+    sendProduct,
+    sendOrder,
     ...(0, import_rich.bikinRich)(paced),
     /** pending sends, active chats and how long sending is paused */
     getSendQueueStats: () => limiter?.stats() ?? { pending: 0, activeChats: 0, pausedForMs: 0 },
