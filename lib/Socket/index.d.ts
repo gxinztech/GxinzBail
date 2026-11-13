@@ -57,6 +57,11 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     };
     /** pause all outgoing messages for `ms` milliseconds */
     pauseSending: (ms: number) => void | undefined;
+    /** Kirim poll: 2 sampai 12 pilihan. selectableCount bawaan 1 (0 = boleh pilih semua) */
+    sendPoll: (jid: string, name: string, values: string[], opsi?: {
+        selectableCount?: number;
+        quoted?: any;
+    }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;

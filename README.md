@@ -24,6 +24,7 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Formatted replies | `sendTable`, `sendList`, `sendCodeBlock` as formatted text | ✅ |
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
 | Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
+| Poll messages | `sendPoll` sends a poll with 2 to 12 options | 🧪 |
 | Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
@@ -138,6 +139,15 @@ await sock.sendAlbum(jid, [
   { video: { url: './clip.mp4' }, caption: 'Clip' }
 ])
 ```
+
+### Poll
+
+```js
+await sock.sendPoll(jid, 'Pilih menu', ['Info', 'Bantuan', 'Keluar'])
+await sock.sendPoll(jid, 'Boleh pilih banyak', ['A', 'B', 'C'], { selectableCount: 2 })
+```
+
+2 to 12 options, no duplicates. `selectableCount` defaults to 1, and `0` lets people pick every option. It goes through the same send queue as other messages.
 
 ### Table
 
