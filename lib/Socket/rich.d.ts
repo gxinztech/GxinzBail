@@ -17,6 +17,10 @@ export declare const bikinRich: (sock: SocketRich) => {
     sendCodeBlock: (jid: string, isi: string, opsi?: Opsi & {
         language?: string;
     }) => Promise<any>;
+    sendRichMessage: (jid: string, submessages: any[], quoted?: any, opsi?: {
+        header?: string;
+        footer?: string;
+    }) => Promise<any>;
 };
 export {};
 //# sourceMappingURL=rich.d.ts.map

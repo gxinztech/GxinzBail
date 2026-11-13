@@ -49,6 +49,11 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     } & {
         language?: string;
     }) => Promise<any>;
+    /** Rich response gabungan dalam satu pesan: messageType 2 teks, 4 tabel, 5 kode. header dan footer jadi blok teks */
+    sendRichMessage: (jid: string, submessages: any[], quoted?: any, opsi?: {
+        header?: string;
+        footer?: string;
+    }) => Promise<any>;
     /** pending sends, active chats and how long sending is paused */
     getSendQueueStats: () => {
         pending: number;

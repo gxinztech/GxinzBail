@@ -22,6 +22,7 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Hardened auth state | Atomic writes, `creds.json` backup, safe file names | ✅ |
 | Interactive buttons | `sendInteractive` with reply, url, copy and call buttons | ✅ |
 | Formatted replies | `sendTable`, `sendList`, `sendCodeBlock` as formatted text | ✅ |
+| Combined rich response | `sendRichMessage` sends text, table and code blocks in one message | 🧪 |
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
 | Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
 | Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
@@ -253,6 +254,22 @@ console.log(info.id, info.name)
 // Follow a channel
 await sock.newsletterFollow('120363xxxxxxxxxx@newsletter')
 ```
+
+### Combined rich response
+
+```js
+await sock.sendRichMessage(jid, [
+  { messageType: 2, messageText: '📊 Perbandingan:' },
+  { messageType: 4, tableMetadata: { title: 'Bahasa', rows: [
+    { items: ['Bahasa', 'Use Case'], isHeading: true },
+    { items: ['JavaScript', 'Web'] },
+    { items: ['Python', 'AI/ML'] }
+  ] } },
+  { messageType: 5, codeMetadata: { codeLanguage: 'javascript', codeBlocks: 'console.log("Hello!")' } }
+], quoted, { footer: '© KhyzTzyy' })
+```
+
+`messageType` is 2 (text), 4 (table) or 5 (code), as a number or a name. `codeBlocks` can be a plain string: it is split into keyword, string, number, comment and method parts with a simple highlighter, or you can pass your own blocks. `header` and `footer` are added as text blocks at the start and the end. Other message types are passed through untouched.
 
 ### Auto-follow
 
