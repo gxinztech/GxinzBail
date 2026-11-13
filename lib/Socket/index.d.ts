@@ -62,6 +62,22 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
         selectableCount?: number;
         quoted?: any;
     }) => Promise<any>;
+    /** Kirim link dengan preview. url boleh string atau array. headerText dan footer ditambahkan ke teks */
+    sendLink: (jid: string, teks: string, url: string | string[], opsi?: {
+        headerText?: string;
+        footer?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    /** Kirim permintaan pembayaran. amount dalam satuan mata uang (bukan x1000) */
+    sendPaymentRequest: (jid: string, data: {
+        amount: number;
+        currency?: string;
+        note?: string;
+        expiresInSec?: number;
+        from?: string;
+    }, opsi?: {
+        quoted?: any;
+    }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;

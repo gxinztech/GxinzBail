@@ -25,6 +25,8 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 | Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
 | Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
 | Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
+| Link messages | `sendLink` sends a link with preview, optional header and footer | 🧪 |
+| Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | 🧪 |
 | Native rich cards | `rich: true` on the helpers above | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
@@ -148,6 +150,31 @@ await sock.sendPoll(jid, 'Boleh pilih banyak', ['A', 'B', 'C'], { selectableCoun
 ```
 
 2 to 12 options, no duplicates. `selectableCount` defaults to 1, and `0` lets people pick every option. It goes through the same send queue as other messages.
+
+### Link
+
+```js
+await sock.sendLink(jid, 'Hasil upload:\n🔗 {{IE_0}}klik disini{{/IE_0}}', ['https://example.com'], {
+  headerText: '📁 Uploader',
+  footer: '✨ Selesai!',
+  quoted
+})
+```
+
+The preview card needs the `link-preview-js` package in your bot. `{{IE_n}}label{{/IE_n}}` becomes the label followed by the n-th URL. `citations` are not supported by the protocol and are ignored.
+
+### Payment request
+
+```js
+await sock.sendPaymentRequest(jid, {
+  amount: 50000,
+  currency: 'IDR',
+  note: 'Pembayaran order #123',
+  expiresInSec: 3600
+})
+```
+
+`amount` is in normal currency units. In groups, pass `from` with the JID of the person who should pay. WhatsApp shows the full payment card only in countries with WhatsApp Pay, elsewhere it may look like a plain message or not show at all.
 
 ### Table
 
