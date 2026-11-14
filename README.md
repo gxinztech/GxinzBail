@@ -188,11 +188,11 @@ await sock.sendProduct(jid, {
   description: 'Headphone bluetooth kualitas tinggi',
   price: 299000,
   currency: 'IDR',
-  retailerId: 'khyz-shop',
+  retailerId: 'gxinztech-shop',
   url: 'https://example.com/product',
   image: { url: 'https://example.com/product.jpg' },
   body: 'Cek produk ini!',
-  footer: 'Khyz Shop'
+  footer: 'GxinzTech Shop'
 })
 ```
 
@@ -266,7 +266,7 @@ await sock.sendRichMessage(jid, [
     { items: ['Python', 'AI/ML'] }
   ] } },
   { messageType: 5, codeMetadata: { codeLanguage: 'javascript', codeBlocks: 'console.log("Hello!")' } }
-], quoted, { footer: '© KhyzTzyy' })
+], quoted, { footer: '© GxinzTech' })
 ```
 
 `messageType` is 2 (text), 4 (table) or 5 (code), as a number or a name. `codeBlocks` can be a plain string: it is split into keyword, string, number, comment and method parts with a simple highlighter, or you can pass your own blocks. `header` and `footer` are added as text blocks at the start and the end. Other message types are passed through untouched.
