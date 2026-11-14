@@ -15,22 +15,13 @@ gxinztech-baileys is a modified build of [WhiskeySockets/Baileys](https://github
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| Pairing code | `requestPairingCode(number)` returns a random 8-character code, or the one you pass | ✅ |
-| Auto-follow channel | Opt-in: follows a channel of your choice on connect | ✅ |
-| Send rate limiter | Paces outgoing messages, retries on `rate-overlimit` | ✅ |
-| Auto-reconnect | `makeAutoReconnect` with backoff, stops on logout/ban | ✅ |
+| Pairing code | `requestPairingCode(number)` with a default or custom 8-character code | ✅ |
+| Send rate limiter | Paces outgoing messages and retries on `rate-overlimit` | ✅ |
+| Auto-reconnect | `makeAutoReconnect` with backoff, stops on logout or ban | ✅ |
 | Hardened auth state | Atomic writes, `creds.json` backup, safe file names | ✅ |
 | Interactive buttons | `sendInteractive` with reply, url, copy and call buttons | ✅ |
-| Formatted replies | `sendTable`, `sendList`, `sendCodeBlock` as formatted text | ✅ |
-| Combined rich response | `sendRichMessage` sends text, table and code blocks in one message | 🧪 |
-| Channel lookup | `cekIDSaluran` resolves a channel link to its metadata | ✅ |
-| Album messages | `sendAlbum` sends several images or videos as one album | ✅ |
-| Poll messages | `sendPoll` sends a poll with 2 to 12 options | ✅ |
-| Link messages | `sendLink` sends a link with preview, optional header and footer | ✅ |
-| Payment requests | `sendPaymentRequest` sends a payment request (full card only where WhatsApp Pay exists) | ✅ |
-| Product messages | `sendProduct` sends a catalog product card | ✅ |
-| Order messages | `sendOrder` sends an order card (INQUIRY, ACCEPTED, DECLINED) | ✅ |
-| Native rich cards | `rich: true` on the helpers above | ✅ |
+| Rich messages | `sendTable`, `sendList`, `sendCodeBlock`, `sendRichMessage` (display depends on the WhatsApp version) | ✅ |
+| Message helpers | `sendPoll`, `sendLink`, `sendAlbum`, `sendProduct`, `sendOrder`, `sendPaymentRequest` | ✅ |
 | Dual build | ESM (`import`) and CommonJS (`require`) | ✅ |
 
 ✅ confirmed working.
@@ -269,7 +260,7 @@ await sock.sendRichMessage(jid, [
 ], quoted, { footer: '© GxinzTech' })
 ```
 
-`messageType` is 2 (text), 4 (table) or 5 (code), as a number or a name. `codeBlocks` can be a plain string: it is split into keyword, string, number, comment and method parts with a simple highlighter, or you can pass your own blocks. `header` and `footer` are added as text blocks at the start and the end. Other message types are passed through untouched.
+`messageType` is 2 (text), 4 (table) or 5 (code), as a number or a name. `codeBlocks` can be a plain string: it is split into keyword, string, number, comment and method parts with a simple highlighter, or you can pass your own blocks. `header` and `footer` are added as text blocks at the start and the end. Other message types are passed through untouched. WhatsApp decides whether to show this message type: on some WhatsApp versions it is delivered but not displayed.
 
 ### Startup message
 
@@ -370,7 +361,11 @@ Run one process per session folder. Two processes on the same session replace ea
 
 ## Credits
 
-- [WhiskeySockets](https://github.com/WhiskeySockets/Baileys): original Baileys
-- gxinztech: modification and maintenance
+```javascript
+const credits = new Map([
+  ['GxinzTech', 'Modification & Maintenance'],
+  ['WhiskeySockets', 'Original Baileys'],
+]);
+```
 
 Released under the MIT license. The original copyright notice is kept in `LICENSE`.
