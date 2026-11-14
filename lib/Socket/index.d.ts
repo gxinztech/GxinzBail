@@ -27,6 +27,8 @@ type OpsiInteraktif = {
     footer?: string;
     title?: string;
     buttons: TombolInteraktif[];
+    /** pakai bentuk node <biz> yang lebih baru (opt-in) */
+    bizV2?: boolean;
 };
 declare const makeWASocket: (config: UserFacingSocketConfig) => {
     sendTable: (jid: string, title: string, header: string[], baris: string[][], opsi?: {
