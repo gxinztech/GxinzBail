@@ -124,6 +124,8 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
         voter: string;
         voterName?: string | null;
         selected: string[];
+        correctAnswer?: string;
+        isCorrect?: boolean;
         results: {
             name: string;
             count: number;
@@ -172,6 +174,11 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     }) => Promise<any>;
     /** Tag semua anggota grup tanpa menampilkan daftar (hidetag) */
     hideTag: (jid: string, teks: string, opsi?: {
+        quoted?: any;
+    }) => Promise<any>;
+    /** Kirim kuis poll bawaan WhatsApp. answer: teks pilihan benar atau nomor urut (mulai 0) */
+    sendQuiz: (jid: string, soal: string, pilihan: string[], opsi: {
+        answer: string | number;
         quoted?: any;
     }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;

@@ -385,6 +385,32 @@ Run one process per session folder. Two processes on the same session replace ea
 
 ---
 
+## Changelog
+
+Newest first.
+
+### Added
+- `sendQuiz`: single-choice quiz poll with a correct answer. With `onPollVote`, each vote has `correctAnswer` and `isCorrect`.
+- `onPollVote`: receive and decrypt votes on polls sent with `sendPoll` / `sendQuiz`.
+- Small helpers: `sendContact`, `sendLocation`, `sendVoiceNote`, `sendReact`, `pinMessage`, `unpinMessage`, `tagAll`, `hideTag`.
+- `sendRichMessage`, `sendProduct`, `sendOrder`, `sendPaymentRequest`, `sendLink`, `sendPoll`.
+- Startup thank-you message. Turn it off with `banner: false` or `GXINZ_BANNER=off`.
+
+### Changed
+- `tagAll` now uses WhatsApp's built-in mention-all. Pass `{ manual: true }` for the old member list.
+- Interactive buttons no longer send an empty header or footer. Optional `bizV2` is off by default and may be rejected by WhatsApp.
+- Auto-follow channel is opt-in (`autoFollowChannel`).
+
+### Fixed
+- `onPollVote` import that stopped the package from loading in one release.
+
+### Security and stability
+- Send rate limiting: per-chat queue, pacing, window cap, backoff only on rate-limit errors.
+- Group metadata cache.
+- Atomic auth file writes with a `creds.json.bak` backup.
+- `makeAutoReconnect`: reconnects with backoff and stops on logout or a restricted account.
+- Media URL checks against SSRF, and `ffmpeg` is started without a shell.
+
 ## Credits
 
 ```javascript

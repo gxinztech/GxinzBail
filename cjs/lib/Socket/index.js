@@ -450,6 +450,8 @@ const makeWASocket = (config) => {
           selected: dipilih,
           results: hasilAgregat.map(o => ({ name: o.name, count: o.voters.length, voters: o.voters })),
           timestamp: waktu,
+          correctAnswer: info?.correctAnswer?.optionName,
+          isCorrect: info?.correctAnswer?.optionName ? dipilih.length === 1 && dipilih[0] === info.correctAnswer.optionName : undefined,
           key: k
       };
       for (const fn of pendengarVote) {
@@ -574,6 +576,41 @@ const makeWASocket = (config) => {
       const { quoted, ...lainnya } = opsi;
       return sendMessage(jid, { text: String(teks), mentions: ids }, { quoted, ...lainnya });
   };
+  // Kirim kuis (poll bawaan WhatsApp dengan jawaban benar). Pilihan tunggal, 2 sampai 12 opsi.
+  // answer: teks pilihan yang benar, atau nomor urutnya (mulai 0). Kalau WhatsApp penerima belum mendukung kuis, tampil sebagai poll biasa.
+  const sendQuiz = async (jid, soal, pilihan, opsi = {}) => {
+      const judul = typeof soal === 'string' ? soal.trim() : '';
+      if (!judul) {
+          throw new Error('Pertanyaan kuis tidak boleh kosong');
+      }
+      const daftar = Array.isArray(pilihan) ? pilihan.map(v => String(v).trim()).filter(Boolean) : [];
+      if (daftar.length < 2 || daftar.length > 12) {
+          throw new Error('Kuis butuh 2 sampai 12 pilihan');
+      }
+      if (new Set(daftar).size !== daftar.length) {
+          throw new Error('Pilihan kuis tidak boleh kembar');
+      }
+      const { answer, quoted } = opsi;
+      const benar = typeof answer === 'number' ? daftar[answer] : answer;
+      if (!benar || !daftar.includes(benar)) {
+          throw new Error('answer harus salah satu pilihan (teksnya, atau nomor urut mulai 0)');
+      }
+      const msg = (0, import_messages.generateWAMessageFromContent)(jid, {
+          messageContextInfo: { messageSecret: globalThis.crypto.getRandomValues(new Uint8Array(32)) },
+          pollCreationMessageV3: {
+              name: judul,
+              selectableOptionsCount: 1,
+              options: daftar.map(optionName => ({ optionName })),
+              pollType: import_WAProto.proto.Message.PollType.QUIZ,
+              correctAnswer: { optionName: benar }
+          }
+      }, { userJid: sock.user?.id ?? '', quoted });
+      await relayMessage(jid, msg.message, { messageId: msg.key.id, additionalNodes: [{ tag: 'meta', attrs: { polltype: 'creation' } }] });
+      if (typeof simpanPoll === 'function') {
+          simpanPoll(msg);
+      }
+      return msg;
+  };
   return {
     ...sock,
     sendMessage,
@@ -582,6 +619,7 @@ const makeWASocket = (config) => {
     sendAlbum,
     sendInteractive,
     sendPoll,
+    sendQuiz,
     onPollVote,
     sendContact,
     sendLocation,
