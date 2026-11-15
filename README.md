@@ -145,6 +145,32 @@ await sock.sendPoll(jid, 'Boleh pilih banyak', ['A', 'B', 'C'], { selectableCoun
 
 2 to 12 options, no duplicates. `selectableCount` defaults to 1, and `0` lets people pick every option. It goes through the same send queue as other messages.
 
+### Poll votes
+
+```js
+const stop = sock.onPollVote(v => {
+  console.log(v.voterName, 'voted', v.selected, 'on', v.title)
+  console.log(v.results) // [{ name, count, voters }]
+})
+```
+
+The library does not decrypt poll votes by itself, so this helper does it. It works for polls sent with `sendPoll` by the running bot (the last 500 are kept in memory). For polls from before a restart, return the original message from your `getMessage` and it will be used. `selected` is empty when someone removes their vote.
+
+### Small helpers
+
+```js
+await sock.sendContact(jid, { name: 'Gxinz', number: '6281234567890' })
+await sock.sendLocation(jid, -6.2, 106.816, { name: 'Jakarta' })
+await sock.sendVoiceNote(jid, { url: './suara.ogg' })
+await sock.sendReact(jid, m.key, '🔥')
+await sock.pinMessage(jid, m.key, { duration: '7d' })
+await sock.unpinMessage(jid, m.key)
+await sock.tagAll(groupJid, 'Rapat sekarang!')   // uses WhatsApp's built-in @mention-all, sent as "@semua Rapat sekarang!"
+await sock.hideTag(groupJid, 'Rapat sekarang!')  // only your text is visible
+```
+
+`tagAll` and `hideTag` work in groups only. `tagAll` uses WhatsApp's built-in mention-all, so no member numbers are listed. Change the word with `{ label: '@everyone' }`, or pass `{ manual: true }` to list every member as before. Voice notes play best as ogg opus, for other formats pass `mimetype`. Pin durations are `24h`, `7d` or `30d`. All of them go through the same send queue as other messages.
+
 ### Link
 
 ```js

@@ -116,6 +116,64 @@ declare const makeWASocket: (config: UserFacingSocketConfig) => {
     }, opsi?: {
         quoted?: any;
     }) => Promise<any>;
+    /** Terima suara poll. Poll harus dikirim lewat sendPoll di proses ini (atau getMessage mengembalikannya). Mengembalikan fungsi berhenti */
+    onPollVote: (handler: (vote: {
+        pollId: string;
+        chat: string;
+        title: string;
+        voter: string;
+        voterName?: string | null;
+        selected: string[];
+        results: {
+            name: string;
+            count: number;
+            voters: string[];
+        }[];
+        timestamp: number;
+        key: any;
+    }) => void | Promise<void>) => () => boolean;
+    /** Kirim 1 sampai 20 kontak: { name, number, org? } atau array-nya */
+    sendContact: (jid: string, kontak: {
+        name: string;
+        number: string;
+        org?: string;
+    } | {
+        name: string;
+        number: string;
+        org?: string;
+    }[], opsi?: {
+        displayName?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    /** Kirim lokasi */
+    sendLocation: (jid: string, lat: number, lon: number, opsi?: {
+        name?: string;
+        address?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    /** Kirim voice note. Bawaan audio/ogg; codecs=opus */
+    sendVoiceNote: (jid: string, audio: any, opsi?: {
+        mimetype?: string;
+        quoted?: any;
+    }) => Promise<any>;
+    /** Reaksi emoji ke pesan. emoji kosong menghapus reaksi */
+    sendReact: (jid: string, key: any, emoji?: string) => Promise<any>;
+    /** Sematkan pesan. duration '24h' (bawaan), '7d' atau '30d' */
+    pinMessage: (jid: string, key: any, opsi?: {
+        duration?: '24h' | '7d' | '30d';
+    }) => Promise<any>;
+    /** Lepas sematan pesan */
+    unpinMessage: (jid: string, key: any) => Promise<any>;
+    /** Tag semua anggota pakai fitur @semua bawaan WhatsApp. label bawaan '@semua'; manual: true = daftar @nomor */
+    tagAll: (jid: string, teks?: string, opsi?: {
+        label?: string;
+        manual?: boolean;
+        quoted?: any;
+    }) => Promise<any>;
+    /** Tag semua anggota grup tanpa menampilkan daftar (hidetag) */
+    hideTag: (jid: string, teks: string, opsi?: {
+        quoted?: any;
+    }) => Promise<any>;
     cekIDSaluran: (link: string) => Promise<import("../Types/index.js").NewsletterMetadata | null>;
     sendAlbum: (jid: string, items: AlbumItem[], options?: any) => Promise<(import("../Types/index.js").WAMessage | undefined)[]>;
     sendInteractive: (jid: string, opsi: OpsiInteraktif, options?: any) => Promise<any>;
