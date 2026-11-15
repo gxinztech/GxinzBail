@@ -154,7 +154,7 @@ const stop = sock.onPollVote(v => {
 })
 ```
 
-The library does not decrypt poll votes by itself, so this helper does it. It works for polls sent with `sendPoll` by the running bot (the last 500 are kept in memory). For polls from before a restart, return the original message from your `getMessage` and it will be used. `selected` is empty when someone removes their vote.
+The library does not decrypt poll votes by itself, so this helper does it. It works for polls sent with `sendPoll` by the running bot (the last 500 are kept in memory). For polls from before a restart, return the original message from your `getMessage` and it will be used. `selected` is empty when someone removes their vote. To keep polls across restarts, pass `pollStorePath: './poll-store.json'` to `makeWASocket`: polls are saved to that file (title, options, key; not the votes) and loaded again at start.
 
 ### Small helpers
 

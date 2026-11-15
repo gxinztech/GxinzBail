@@ -34,6 +34,8 @@ export type PatchedMessageWithRecipientJID = proto.IMessage & {
 export type SocketConfig = {
     /** follow this channel (newsletter JID) once connected. Off unless you set it */
     autoFollowChannel?: string | false;
+    /** Path file JSON untuk menyimpan poll, supaya suara tetap terbaca setelah bot restart (onPollVote) */
+    pollStorePath?: string;
     /** outgoing message pacing. Enabled by default; `false` turns it off, an object overrides the defaults */
     sendRateLimit?: false | Partial<SendRateLimitOptions>;
     /** the WS url to connect to WA */
